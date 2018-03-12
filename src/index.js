@@ -1,53 +1,68 @@
 import React, { Component } from "react"
 import ReactDOM from "react-dom"
-//import lodah
+
 import _ from "lodash"
 
-import YTSearch from 'youtube-api-search'
-
 import Search_bar from "./components/Search_bar"
-import Video_list from "./components/Video_list"
-import Video_detail from "./components/Video_detail"
 
 //variable to hold the API Key
-const API_KEY = 'AIzaSyBYBCVLbnMFTz89b2k8J2s_WWJPF__7vDQ';
+const API_KEY = 'AIzaSyC7zQisgvbtB8AZfvGTgLx2N3Ka_QCU2wg';
 
 
-// Create a new component
-// This component should create some html
 class App extends Component{
   constructor(props){
     super(props);
     this.state = {
-      videos: [],
-      selectedVideo: null
+      videos: null,
+      selectVideo: null,
     };
 
-    this.videoSearch('React JS');
   }
 
-  videoSearch(searchTerm) {
-    //youtube search
-    YTSearch({key: API_KEY, term:searchTerm, max: '1-50'}, (videos) => {
-      this.setState({
-        videos:videos,
-        selectedVideo: videos[0]
-       });
-    });
+  httpGet(config){
+    return new Promise(function(resolve,reject){
 
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function(){
+        if (this.readyState == 4 && this.status == 200){
+          resolve(xhttp.responseText);
+        }
+        if(this.readyState === XMLHttpRequest.DONE && this.status != 200){
+          reject("An error has ocurred.")
+        }
+      };
+
+      xhttp.open(config.method, config.url, config.sync);
+
+      xhttp.send();
+    });
+  }
+
+  getVideos(term){
+
+    var theUrl = 'https://www.googleapis.com/youtube/v3/search?part=snippet'
+     + '&type=video'
+     + '&q=' + term
+     + '&key=' + API_KEY;
+
+    var config = {method:"GET", url:theUrl, sync:false};
+
+    var promise = this.httpGet(config);
+
+    promise.then(function(videos){
+      console.log(JSON.parse(videos));
+    }, function(error){
+
+    });
   }
 
   render(){
-    const videoSearch = _.debounce( (term) => {this.videoSearch(term)},400)
+    const videoSearch = _.debounce( (term) => {this.getVideos(term)},400)
 
-      return (<div>
-            <Search_bar onSearchTermChange={videoSearch} />
-            <Video_detail video={this.state.selectedVideo}/>
-            <Video_list
-              onVideoSelect={selectedVideo => this.setState({ selectedVideo })}
-              videos={this.state.videos}
-              />
-          </div>
+      return (
+        <div>
+          <Search_bar onSearchTermChange={videoSearch} />
+        </div>
         )
   }
 }
